@@ -3,9 +3,19 @@
  */
 package password_manager;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+import org.junit.jupiter.api.Test;
+
 class AppTest {
-    // @Test void appHasAGreeting() {
-    // App classUnderTest = new App();
-    // assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
-    // }
+    @Test
+    void checkEncryptions() {
+        var encrypter = new Encrypter(Encrypter.generateSalt(), "poop");
+        var originalText = "the quick brown fox jumped over the lazy dog";
+        var encryptedText = encrypter.encryptString(originalText);
+        var decryptedText = new String(encrypter.decryptString(encryptedText));
+        assertNotEquals(encryptedText, originalText.getBytes());
+        assertEquals(originalText, decryptedText);
+    }
 }

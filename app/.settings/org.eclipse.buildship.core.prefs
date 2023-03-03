@@ -1,11 +1,11 @@
-arguments=--init-script /Users/alvin/.local/share/nvim/mason/packages/jdtls/config_mac/org.eclipse.osgi/50/0/.cp/gradle/init/init.gradle
+arguments=--init-script /Users/alvin/.local/share/nvim/mason/packages/jdtls/config_mac/org.eclipse.osgi/97/0/.cp/gradle/init/init.gradle
 auto.sync=false
 build.scans.enabled=false
 connection.gradle.distribution=GRADLE_DISTRIBUTION(VERSION(7.4.2))
-connection.project.dir=..
+connection.project.dir=
 eclipse.preferences.version=1
 gradle.user.home=
-java.home=/opt/homebrew/Cellar/openjdk@17/17.0.5/libexec/openjdk.jdk/Contents/Home
+java.home=/Library/Java/JavaVirtualMachines/temurin-19.jdk/Contents/Home
 jvm.arguments=
 offline.mode=false
 override.workspace.settings=true
