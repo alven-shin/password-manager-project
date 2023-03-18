@@ -30,7 +30,7 @@ dependencies {
     implementation 'com.google.guava:guava:31.0.1-jre'
 
     // For SQLite
-    implementation 'org.xerial:sqlite-jdbc:3.40.0.0'
+    implementation 'org.xerial:sqlite-jdbc:3.41.0.0'
 }
 
 application {

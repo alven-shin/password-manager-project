@@ -1,51 +1,48 @@
 package password_manager;
 
 import java.io.File;
+import java.sql.SQLException;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import password_manager.database.DatabaseDao;
 
 public class App extends Application {
     private Stage window;
-    private Database db;
+    private DatabaseDao dao;
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws SQLException {
         this.window = stage;
-        this.db = new Database();
+        this.dao = null;
 
         this.window.setTitle("Password Manager");
         this.showLogin();
         this.window.show();
     }
 
-    private void showLogin() {
+    @Override
+    public void stop() throws Exception {
+        super.stop();
+        if (this.dao != null) {
+            this.dao.close();
+        }
+    }
+
+    private void showLogin() throws SQLException {
         File database = new File("data.db");
         if (database.exists()) {
-            this.window.setScene(Login.loginScene(window, db));
+            this.window.setScene(Login.loginScene(this, window));
         } else {
-            this.window.setScene(Login.registerScene(window, db));
+            this.window.setScene(Login.registerScene(this, window));
         }
+    }
+
+    public void setDao(DatabaseDao dao) {
+        this.dao = dao;
     }
 
     public static void main(String[] args) {
         Application.launch(args);
     }
-
-    // void givenPassword_whenEncrypt_thenSuccess()
-    // throws InvalidKeySpecException, NoSuchAlgorithmException,
-    // IllegalBlockSizeException, InvalidKeyException, BadPaddingException,
-    // InvalidAlgorithmParameterException, NoSuchPaddingException {
-
-    // String plainText = "www.baeldung.com";
-    // String password = "baeldung";
-    // String salt = "12345678";
-    // IvParameterSpec ivParameterSpec = AESUtil.generateIv();
-    // SecretKey key = AESUtil.getKeyFromPassword(password, salt);
-    // String cipherText = AESUtil.encryptPasswordBased(plainText, key,
-    // ivParameterSpec);
-    // String decryptedCipherText = AESUtil.decryptPasswordBased(
-    // cipherText, key, ivParameterSpec);
-    // Assertions.assertEquals(plainText, decryptedCipherText);
-    // }
 }

@@ -1,4 +1,4 @@
-package password_manager;
+package password_manager.database;
 
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
@@ -31,29 +31,25 @@ public class Encrypter {
             this.cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException e) {
             e.printStackTrace();
-            throw new RuntimeException();
         }
     }
 
-    public byte[] encryptString(String s) {
+    public byte[] encryptString(String s) throws BadPaddingException {
         try {
             this.cipher.init(Cipher.ENCRYPT_MODE, this.secret, generateIV());
             return cipher.doFinal(s.getBytes("UTF-8"));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException
-                | BadPaddingException | UnsupportedEncodingException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
+                | UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public byte[] decryptString(byte[] encrypted) {
+    public byte[] decryptString(byte[] encrypted) throws BadPaddingException {
         try {
             cipher.init(Cipher.DECRYPT_MODE, secret, generateIV());
             return cipher.doFinal(encrypted);
-        } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException
-                | BadPaddingException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -74,7 +70,7 @@ public class Encrypter {
 
     public static String generateRandomString() {
         // Define possible characters
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-=_+?<>";
 
         // Create a StringBuilder object
         StringBuilder sb = new StringBuilder();

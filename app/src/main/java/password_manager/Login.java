@@ -11,9 +11,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import password_manager.database.DatabaseDao;
 
 public class Login {
-    public static Scene registerScene(Window owner, Database db) {
+    public static Scene registerScene(App app, Window owner) throws SQLException {
         VBox layout = new VBox();
         layout.setAlignment(Pos.CENTER);
         layout.setPrefHeight(100);
@@ -46,22 +47,25 @@ public class Login {
                 s.show();
             } else {
                 try {
-                    db.unlock(pass);
+                    var dao = new DatabaseDao(pass);
+                    app.setDao(dao);
+
                     Stage s = Alert.createAlert(owner, "Your master password has been set.");
                     s.show();
                 } catch (SQLException e) {
-                    Stage s = Alert.createAlert(owner, e.toString());
-                    s.show();
+                    throw new RuntimeException(e);
                 }
             }
+
         });
 
         layout.getChildren().addAll(instructions, passwordTextbox, confirmTextbox, confirmButton);
+
         Scene s = new Scene(layout);
         return s;
     }
 
-    public static Scene loginScene(Window owner, Database db) {
+    public static Scene loginScene(App app, Window owner) {
         VBox layout = new VBox();
         layout.setAlignment(Pos.CENTER);
         layout.setPrefHeight(100);
@@ -76,14 +80,21 @@ public class Login {
         Button confirmButton = new Button("Login");
         VBox.setMargin(confirmButton, new Insets(10, 0, 0, 0));
         confirmButton.setOnMouseClicked(event -> {
-            // String pass = passwordTextbox.getText().strip();
+            String pass = passwordTextbox.getText().strip();
             passwordTextbox.clear();
-            // try {
-            System.out.println("unlocked!");
-            // } catch (SQLException e) {
-            // Stage s = Alert.createAlert(owner, "Master password is incorrect!");
-            // s.show();
-            // }
+
+            try {
+                var dao = new DatabaseDao(pass);
+                app.setDao(dao);
+
+                Stage s = Alert.createAlert(owner, "Unlocked!");
+                s.show();
+            } catch (IllegalArgumentException e) {
+                Stage s = Alert.createAlert(owner, "Password is incorrect!");
+                s.show();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         layout.getChildren().addAll(instructions, passwordTextbox, confirmButton);
