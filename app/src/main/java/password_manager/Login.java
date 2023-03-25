@@ -2,6 +2,7 @@ package password_manager;
 
 import java.sql.SQLException;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -14,7 +15,7 @@ import javafx.stage.Window;
 import password_manager.database.DatabaseDao;
 
 public class Login {
-    public static Scene registerScene(App app, Window owner) throws SQLException {
+    public static void registerScene(App app, Window owner) throws SQLException {
         VBox layout = new VBox();
         layout.setAlignment(Pos.CENTER);
         layout.setPrefHeight(100);
@@ -46,32 +47,45 @@ public class Login {
                 Stage s = Alert.createAlert(owner, "Passwords do not match!");
                 s.show();
             } else {
-                try {
-                    var dao = new DatabaseDao(pass);
-                    app.setDao(dao);
+                var task = new Thread(() -> {
+                    try {
+                        var dao = new DatabaseDao(pass);
+                        app.setDao(dao);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (app.checkDaoStatus()) {
+                        Platform.runLater(() -> {
+                            Stage s = Alert.createAlert(owner, "Your master password has been set.");
+                            s.show();
 
-                    Stage s = Alert.createAlert(owner, "Your master password has been set.");
-                    s.show();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
+                            Home home;
+                            try {
+                                home = new Home(owner, app.getDao());
+                            } catch (SQLException e) {
+                                throw new RuntimeException(e);
+                            }
+                            home.showScene(app);
+                        });
+                    }
+                });
+                task.start();
             }
-
         });
 
         layout.getChildren().addAll(instructions, passwordTextbox, confirmTextbox, confirmButton);
 
-        Scene s = new Scene(layout);
-        return s;
+        var scene = new Scene(layout);
+        app.switchScenes(scene);
     }
 
-    public static Scene loginScene(App app, Window owner) {
+    public static void loginScene(App app, Window owner) {
         VBox layout = new VBox();
         layout.setAlignment(Pos.CENTER);
         layout.setPrefHeight(100);
         layout.setPadding(new Insets(40));
 
-        Text instructions = new Text("Please enter a your master password.");
+        Text instructions = new Text("Please enter your master password.");
         VBox.setMargin(instructions, new Insets(0, 0, 10, 0));
 
         PasswordField passwordTextbox = new PasswordField();
@@ -83,22 +97,39 @@ public class Login {
             String pass = passwordTextbox.getText().strip();
             passwordTextbox.clear();
 
-            try {
-                var dao = new DatabaseDao(pass);
-                app.setDao(dao);
+            var task = new Thread(() -> {
+                try {
+                    var dao = new DatabaseDao(pass);
+                    app.setDao(dao);
+                } catch (IllegalArgumentException e) {
+                    Platform.runLater(() -> {
+                        Stage s = Alert.createAlert(owner, "Password is incorrect!");
+                        s.show();
+                    });
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                if (app.checkDaoStatus()) {
+                    Platform.runLater(() -> {
+                        Stage s = Alert.createAlert(owner, "Unlocked!");
+                        s.show();
 
-                Stage s = Alert.createAlert(owner, "Unlocked!");
-                s.show();
-            } catch (IllegalArgumentException e) {
-                Stage s = Alert.createAlert(owner, "Password is incorrect!");
-                s.show();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+                        Home home;
+                        try {
+                            home = new Home(owner, app.getDao());
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                        home.showScene(app);
+                    });
+                }
+            });
+            task.start();
         });
 
         layout.getChildren().addAll(instructions, passwordTextbox, confirmButton);
-        Scene s = new Scene(layout);
-        return s;
+
+        var scene = new Scene(layout);
+        app.switchScenes(scene);
     }
 }

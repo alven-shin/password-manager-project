@@ -3,9 +3,13 @@ package password_manager.database;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidParameterException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import javax.crypto.BadPaddingException;
+
+import password_manager.database.tables.Account;
 
 public class DatabaseDao implements AutoCloseable {
     private Database db;
@@ -45,15 +49,10 @@ public class DatabaseDao implements AutoCloseable {
             return conn.prepareStatement(
                     "CREATE TABLE security (encrypted_phrase BLOB NOT NULL, salt BLOB NOT NULL, unencrypted_phrase TEXT NOT NULL) STRICT");
         });
-        // websites table
-        this.db.executeAction(conn -> {
-            return conn.prepareStatement(
-                    "CREATE TABLE website (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT) STRICT");
-        });
         // accounts table
         this.db.executeAction(conn -> {
             return conn.prepareStatement(
-                    "CREATE TABLE account (username BLOB NOT NULL, password BLOB, note BLOB, salt BLOB NOT NULL, website_id INTEGER NOT NULL, FOREIGN KEY(website_id) REFERENCES website(id)) STRICT");
+                    "CREATE TABLE account (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, website_name TEXT NOT NULL, url TEXT, username BLOB NOT NULL, password BLOB, note BLOB) STRICT");
         });
 
         // initialize security table
@@ -88,5 +87,122 @@ public class DatabaseDao implements AutoCloseable {
     @Override
     public void close() throws IOException, SQLException {
         this.db.close();
+    }
+
+    private ResultSet queryAllAccounts() throws SQLException {
+        return this.db.executeQuery(conn -> {
+            var statement = conn.prepareStatement(
+                    "SELECT * FROM account");
+
+            return statement;
+        });
+    }
+
+    public ArrayList<Account> getAccounts() throws SQLException {
+        var resultSet = queryAllAccounts();
+        var accounts = new ArrayList<Account>();
+
+        while (resultSet.next()) {
+            var id = resultSet.getLong("id");
+            var websiteName = resultSet.getString("website_name");
+            var username = resultSet.getBytes("username");
+
+            String url;
+            try {
+                url = resultSet.getString("url");
+            } catch (SQLException e) {
+                url = "";
+            }
+
+            byte[] password;
+            try {
+                password = resultSet.getBytes("password");
+            } catch (SQLException e) {
+                password = new byte[0];
+            }
+
+            byte[] notes;
+            try {
+                notes = resultSet.getBytes("notes");
+            } catch (SQLException e) {
+                notes = new byte[0];
+            }
+
+            try {
+                var acc = new Account(id, websiteName, url, new String(this.crypt.decryptString(username)),
+                        new String(this.crypt.decryptString(password)), new String(this.crypt.decryptString(notes)));
+                accounts.add(acc);
+            } catch (BadPaddingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return accounts;
+    }
+
+    /**
+     * @return id of inserted account
+     */
+    public long addAccount(Account acc) throws SQLException {
+        try {
+            var encryptedUsername = this.crypt.encryptString(acc.getUsername());
+            var encryptedPass = this.crypt.encryptString(acc.getPassword());
+            var encryptedNotes = this.crypt.encryptString(acc.getNote());
+            this.db.executeAction(conn -> {
+                var statement = conn.prepareStatement(
+                        "INSERT INTO account (website_name, url, username, password, note) VALUES (?, ?, ?, ?, ?)");
+                statement.setString(1, acc.getWebsiteName());
+                statement.setString(2, acc.getUrl());
+                statement.setBytes(3, encryptedUsername);
+                statement.setBytes(4, encryptedPass);
+                statement.setBytes(5, encryptedNotes);
+
+                return statement;
+            });
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+
+        // try {
+        var result = this.db.executeQuery(conn -> {
+            return conn.prepareStatement(
+                    "SELECT seq FROM sqlite_sequence WHERE name = 'account' LIMIT 1");
+        });
+        return result.getLong("seq");
+        // } catch (SQLException e) {
+        // return 1;
+        // }
+    }
+
+    public void updateAccount(Account acc) throws SQLException {
+        try {
+            var encryptedUsername = this.crypt.encryptString(acc.getUsername());
+            var encryptedPass = this.crypt.encryptString(acc.getPassword());
+            var encryptedNotes = this.crypt.encryptString(acc.getNote());
+            this.db.executeAction(conn -> {
+                var statement = conn.prepareStatement(
+                        "UPDATE account SET website_name=?, url=?, username=?, password=?, note=? WHERE id=?");
+                statement.setString(1, acc.getWebsiteName());
+                statement.setString(2, acc.getUrl());
+                statement.setBytes(3, encryptedUsername);
+                statement.setBytes(4, encryptedPass);
+                statement.setBytes(5, encryptedNotes);
+                statement.setLong(6, acc.getId());
+
+                return statement;
+            });
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteAccount(Account acc) throws SQLException {
+        this.db.executeAction(conn -> {
+            var statement = conn.prepareStatement(
+                    "DELETE FROM account WHERE id=?");
+            statement.setLong(1, acc.getId());
+
+            return statement;
+        });
     }
 }

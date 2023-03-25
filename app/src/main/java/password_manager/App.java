@@ -4,6 +4,8 @@ import java.io.File;
 import java.sql.SQLException;
 
 import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import password_manager.database.DatabaseDao;
 
@@ -17,7 +19,8 @@ public class App extends Application {
         this.dao = null;
 
         this.window.setTitle("Password Manager");
-        this.showLogin();
+        var scene = new Scene(new VBox());
+        this.showLogin(scene);
         this.window.show();
     }
 
@@ -29,20 +32,32 @@ public class App extends Application {
         }
     }
 
-    private void showLogin() throws SQLException {
+    private void showLogin(Scene scene) throws SQLException {
         File database = new File("data.db");
         if (database.exists()) {
-            this.window.setScene(Login.loginScene(this, window));
+            Login.loginScene(this, window);
         } else {
-            this.window.setScene(Login.registerScene(this, window));
+            Login.registerScene(this, window);
         }
+    }
+
+    public void switchScenes(Scene scene) {
+        this.window.setScene(scene);
     }
 
     public void setDao(DatabaseDao dao) {
         this.dao = dao;
     }
 
+    public boolean checkDaoStatus() {
+        return this.dao != null;
+    }
+
     public static void main(String[] args) {
         Application.launch(args);
+    }
+
+    public DatabaseDao getDao() {
+        return this.dao;
     }
 }
