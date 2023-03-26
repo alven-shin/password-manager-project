@@ -5,8 +5,8 @@ import java.sql.SQLException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -33,21 +33,18 @@ public class Sidebar {
         });
         task.start();
 
-        var searchbar = new HBox();
-        var searchField = new TextField();
         var createButton = new Button("+");
+        createButton.setMaxWidth(Double.MAX_VALUE);
         createButton.tooltipProperty().setValue(new Tooltip("Add an account"));
-        HBox.setHgrow(searchField, Priority.ALWAYS);
-        searchbar.getChildren().addAll(searchField, createButton);
-
-        this.layout = new VBox();
-        this.list = new ListView<>(this.accounts);
-        layout.getChildren().addAll(searchbar, this.list);
-
         createButton.setOnMouseClicked(event -> {
             this.entryPanel.addEntry(this.accounts, this);
             layout.disableProperty().setValue(true);
         });
+
+        this.layout = new VBox();
+        this.list = new ListView<>(this.accounts);
+        layout.getChildren().addAll(createButton, this.list);
+
         this.list.getSelectionModel().selectedItemProperty().addListener(event -> {
             var acc = this.list.getSelectionModel().getSelectedItem();
             if (acc != null) {
