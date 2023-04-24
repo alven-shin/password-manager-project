@@ -15,7 +15,7 @@ import javafx.stage.Window;
 import password_manager.database.DatabaseDao;
 
 public class Login {
-    public static void registerScene(App app, Window owner) throws SQLException {
+    public static void registerScene(App app, Window owner) {
         VBox layout = new VBox();
         layout.setAlignment(Pos.CENTER);
         layout.setPrefHeight(100);
